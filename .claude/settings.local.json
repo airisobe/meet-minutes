@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud run deploy:*)",
+      "Bash(gcloud projects add-iam-policy-binding:*)",
+      "Bash(gcloud builds list:*)",
+      "Bash(gcloud builds log:*)",
+      "Bash(gcloud builds describe:*)",
+      "Bash(python3:*)",
+      "Bash(gcloud auth configure-docker:*)",
+      "Bash(gcloud builds submit:*)",
+      "Bash(gcloud beta run services add-iam-policy-binding:*)",
+      "Bash(gcloud run services add-iam-policy-binding:*)",
+      "Bash(curl:*)",
+      "Bash(gcloud resource-manager org-policies describe:*)",
+      "Bash(gcloud resource-manager org-policies disable-enforce:*)",
+      "Bash(gcloud organizations list:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
