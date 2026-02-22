@@ -1,4 +1,3 @@
-import hmac
 import os
 
 import anthropic
@@ -9,7 +8,6 @@ app = Flask(__name__)
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
-WEBHOOK_SECRET = os.environ["WEBHOOK_SECRET"]
 
 CHANNEL_MAP = {
     "[ONLINE] murmo - Weekly Marketing Sync": "C08MHTH29BR",
@@ -98,20 +96,8 @@ def health():
     return jsonify({"status": "ok"})
 
 
-def verify_token():
-    """AuthorizationヘッダーのBearerトークンを検証する。"""
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        return False
-    token = auth[len("Bearer "):]
-    return hmac.compare_digest(token, WEBHOOK_SECRET)
-
-
 @app.route("/webhook/fireflies", methods=["POST"])
 def webhook_fireflies():
-    if not verify_token():
-        return jsonify({"error": "unauthorized"}), 401
-
     payload = request.get_json(force=True)
 
     title = payload.get("title", "無題の会議")
