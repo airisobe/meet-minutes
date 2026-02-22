@@ -1,3 +1,5 @@
+import json
+import logging
 import os
 
 import anthropic
@@ -5,6 +7,7 @@ import requests
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
@@ -99,6 +102,7 @@ def health():
 @app.route("/webhook/fireflies", methods=["POST"])
 def webhook_fireflies():
     payload = request.get_json(force=True)
+    app.logger.info("Fireflies webhook payload: %s", json.dumps(payload, ensure_ascii=False))
 
     title = payload.get("title", "無題の会議")
     participants = payload.get("participants", [])
