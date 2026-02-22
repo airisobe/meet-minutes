@@ -11,6 +11,21 @@ logging.basicConfig(level=logging.INFO)
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
+FIREFLIES_API_KEY = os.environ["FIREFLIES_API_KEY"]
+
+FIREFLIES_GRAPHQL_URL = "https://api.fireflies.ai/graphql"
+FIREFLIES_TRANSCRIPT_QUERY = """
+query Transcript($transcriptId: String!) {
+  transcript(id: $transcriptId) {
+    title
+    participants
+    sentences {
+      speaker_name
+      text
+    }
+  }
+}
+"""
 
 CHANNEL_MAP = {
     "[ONLINE] murmo - Weekly Marketing Sync": "C08MHTH29BR",
@@ -38,6 +53,27 @@ SUMMARY_PROMPT = """\
 文字起こし:
 {transcript}
 """
+
+
+def fetch_transcript(meeting_id):
+    """Fireflies GraphQL APIから文字起こしを取得する。"""
+    resp = requests.post(
+        FIREFLIES_GRAPHQL_URL,
+        headers={
+            "Authorization": f"Bearer {FIREFLIES_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "query": FIREFLIES_TRANSCRIPT_QUERY,
+            "variables": {"transcriptId": meeting_id},
+        },
+        timeout=60,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if "errors" in data:
+        raise RuntimeError(f"Fireflies API error: {data['errors']}")
+    return data["data"]["transcript"]
 
 
 def resolve_channel(title):
@@ -104,9 +140,19 @@ def webhook_fireflies():
     payload = request.get_json(force=True)
     app.logger.info("Fireflies webhook payload: %s", json.dumps(payload, ensure_ascii=False))
 
-    title = payload.get("title", "無題の会議")
-    participants = payload.get("participants", [])
-    transcript = payload.get("transcript", "")
+    meeting_id = payload.get("meetingId")
+    if not meeting_id:
+        return jsonify({"error": "meetingId is missing"}), 400
+
+    transcript_data = fetch_transcript(meeting_id)
+    app.logger.info("Fireflies transcript data: %s", json.dumps(transcript_data, ensure_ascii=False))
+
+    title = transcript_data.get("title", "無題の会議")
+    participants = transcript_data.get("participants") or []
+    sentences = transcript_data.get("sentences") or []
+    transcript = "\n".join(
+        f"{s.get('speaker_name', '不明')}: {s.get('text', '')}" for s in sentences
+    )
 
     if not transcript:
         return jsonify({"error": "transcript is empty"}), 400
