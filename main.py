@@ -71,6 +71,14 @@ SUMMARY_PROMPT = """\
 
 ※抽象的な表現は避け具体的に。会議不参加者が読んでも理解できる粒度で。
 
+※担当者名・参加者名は以下のマッピングに従い統一すること：
+- masumura.reina / Masumura / masumura → Reina
+- airi / Airi Isobe → Airi
+- tomo / Tomohiro → Tomo
+- daina → Daina
+- hanako → Hanako
+- info@sekiraracard.com / Saya → Saya
+
 ---
 会議タイトル: {title}
 参加者: {participants}
