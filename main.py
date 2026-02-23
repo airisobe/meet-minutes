@@ -31,20 +31,31 @@ CHANNEL_MAP = {
     "[ONLINE] murmo - Weekly Marketing Sync": "C08MHTH29BR",
     "［ONLINE］Chamadhi US Weekly": "C08S4GS02RG",
     "[ONLINE] weekly mtg - Reina": "C09G09ZT8F7",
+    "BE SEKIRARA LOUNGE - Hanano 定例": "C0A9T9MBNBW",
+    "SEKIRARA / Chamadhi weekly": "C09KSKV8T6C",
+    "SEKIRARA weekly with Hinano": "C0A8SCR85V2",
     "default": "C0AG7SAK8MR",
 }
 
 SUMMARY_PROMPT = """\
-以下は会議の文字起こしです。日本語で以下の3項目を簡潔にまとめてください。
+以下は会議の文字起こしです。日本語で以下の3セクションに分けて簡潔にまとめてください。
+出力はSlackに投稿するため、以下のフォーマットルールを厳守してください：
+- 見出しには # や ## を使わない
+- 太字には **ではなく** *テキスト* を使う（Slack mrkdwn形式）
+- 箇条書きは「• 」（中黒＋半角スペース）で始める
+- セクション間は空行1行で区切る
 
-## 会議サマリー
-会議全体の要約を箇条書きで記載
+以下の形式で出力してください：
 
-## 決定事項
-会議中に決定された事項を箇条書きで記載（なければ「特になし」）
+:memo: *会議サマリー*
+• 要約1
+• 要約2
 
-## ネクストアクション
-今後の対応事項を担当者とともに箇条書きで記載（なければ「特になし」）
+:white_check_mark: *決定事項*
+• 決定事項1（なければ「特になし」）
+
+:arrow_forward: *ネクストアクション*
+• 【担当者名】対応内容（なければ「特になし」）
 
 ---
 会議タイトル: {title}
@@ -114,12 +125,24 @@ def generate_summary(title, participants, transcript):
 
 def post_to_slack(channel, title, summary):
     """Slack Bot Tokenでメッセージを投稿する。"""
+    blocks = [
+        {
+            "type": "header",
+            "text": {"type": "plain_text", "text": f":calendar: {title}", "emoji": True},
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": summary},
+        },
+    ]
     resp = requests.post(
         "https://slack.com/api/chat.postMessage",
         headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
         json={
             "channel": channel,
-            "text": f"*{title}*\n\n{summary}",
+            "text": f"{title}\n\n{summary}",
+            "blocks": blocks,
         },
         timeout=30,
     )
