@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 
 import anthropic
 import requests
@@ -49,6 +50,7 @@ SUMMARY_PROMPT = """\
 - 太字には **ではなく** *テキスト* を使う（Slack mrkdwn形式）
 - 箇条書きは「• 」（中黒＋半角スペース）で始める
 - セクション間は空行1行で区切る
+- 絵文字（:emoji_name: 形式やUnicode絵文字）は一切使わない
 
 以下の形式で出力してください：
 
@@ -135,8 +137,22 @@ def generate_summary(title, participants, transcript):
     return message.content[0].text
 
 
+def strip_emojis(text):
+    """Slack絵文字コード(:xxx:)とUnicode絵文字を除去する。"""
+    text = re.sub(r":[a-zA-Z0-9_+-]+:", "", text)
+    emoji_pattern = re.compile(
+        "[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF"
+        "\U0001F1E0-\U0001F1FF\U00002702-\U000027B0\U000024C2-\U0001F251"
+        "\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF"
+        "\U00002600-\U000026FF\U0000FE00-\U0000FE0F\U0000200D]+",
+        flags=re.UNICODE,
+    )
+    return emoji_pattern.sub("", text).strip()
+
+
 def post_to_slack(channel, title, summary):
     """Slack Bot Tokenでメッセージを投稿する。"""
+    summary = strip_emojis(summary)
     blocks = [
         {
             "type": "header",
